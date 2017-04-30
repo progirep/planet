@@ -22,7 +22,7 @@ with open("Makefile","w") as outFile:
         outFile.write(".out/"+a+".ytxt:\n")
         outFile.write("\t@mkdir -p .out\n")
         outFile.write("\t@echo \"Processing: "+a+"\"\n")
-        outFile.write("\ttime "+scriptpath+"/../src/planetB "+option+" "+a+" > .out/"+a+".smt2 2> .out/"+a+".ytxt \n")
+        outFile.write("\ttime "+scriptpath+"/../src/planet "+option+" "+a+" > .out/"+a+".smt2 2> .out/"+a+".ytxt \n")
         outFile.write("\t@echo \"Processing Part 2: "+a+"\"\n")
         if sys.argv[1].find("pprox")>0:
             outFile.write("\t@(time timeout 3600 $$YICES/bin/yices-smt2 .out/"+a+".smt2 >> .out/"+a+".ytxt 2>&1) || if [ $$? -eq 124 ]; then echo \"--> "+a+" timed out\"; else false; fi\n")
