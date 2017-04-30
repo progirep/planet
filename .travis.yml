@@ -1,0 +1,23 @@
+language: cpp
+matrix:
+  include:
+    - compiler: gcc-6
+      os: linux
+      sudo: required
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6 
+            - libboost-all-dev
+            - libglpk-dev
+      env: CXX=g++-6
+      env: CC=gcc-6
+
+script:
+  - cd src
+  - make -j2
+  - cd ..;cd benchmarks/aFewTests
+  - ../../tools/testBenchmarksInThisDirectory.py ../../src/planet
