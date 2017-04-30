@@ -1,7 +1,7 @@
 language: cpp
 matrix:
   include:
-    - compiler: gcc-6
+    - compiler: gcc-5
       os: linux
       sudo: required
       dist: trusty
@@ -9,15 +9,22 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty
           packages:
-            - g++-6 
             - libboost-all-dev
             - libglpk-dev
-      env: CXX=g++-6
-      env: CC=gcc-6
+            - qt5-qmake
+            - g++-5
+            - gcc-5
+            - clang-3.8
+            - qt5-default
+            - valgrind
+      env: CXX=clang++-3.8
+      env: CC=clang-3.8
 
 script:
   - cd src
+  - qmake -spec linux-clang "QMAKE_CXX=clang++-3.8" Tool.pro
   - make -j2
   - cd ..;cd benchmarks/aFewTests
   - ../../tools/testBenchmarksInThisDirectory.py ../../src/planet

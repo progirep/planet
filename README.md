@@ -28,6 +28,7 @@ Preparation:
 - Then, some packages have to be installed in order to build "PLANET" (and to use the python scripts that come with it). For Ubuntu 17.04, the following packages are known to be requirements:
     - libglpk-dev
     - qt5-qmake
+    - valgrind
 
 Some scripts in this repository need the root path of the Caffe neural network learning framework, or the root path of the Yices SMT solver. The following environment variables should point to these:
 

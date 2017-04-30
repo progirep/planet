@@ -19,7 +19,7 @@ TARGET = planet
 
 INCLUDEPATH += /usr/include/lpsolve/
 
-LIBS +=  -static -lglpk -lz -lltdl -llpsolve55 -ldl -lcolamd -lsuitesparseconfig #-static
+LIBS +=  -static -lglpk -lgmp -lumfpack -lsuitesparseconfig -lcholmod -lamd -lcolamd -lccolamd -lcamd -lz -lltdl -ldl  #-static
 
 PKGCONFIG += 
 

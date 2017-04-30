@@ -1208,9 +1208,9 @@ bool VerificationProblem::checkPartialNodeFixtureInLPRelaxation(std::vector<int>
     for (unsigned int i=0;i<nodeTypes.size();i++) {
         if ((nodeTypes[i]==INPUT) || (nodeTypes[i]==LINEAR)) {
             fixedOptimizationFunctionNetworkSolving[i+1] = 0.0;
-        } else if ((nodeTypes[i]==RELU)) {
+        } else if (nodeTypes[i]==RELU) {
             fixedOptimizationFunctionNetworkSolving[i+1] = 1.0;
-        } else if ((nodeTypes[i]==MAXPOOL)) {
+        } else if (nodeTypes[i]==MAXPOOL) {
             // Optimize a little bit.
             fixedOptimizationFunctionNetworkSolving[i+1] = 0.01;
         } else {
@@ -1365,7 +1365,7 @@ bool VerificationProblem::checkPartialNodeFixtureInLPRelaxation(std::vector<int>
         for (unsigned int i=nofLevel0VarsInFixture;i<varFixture.size();i++) {
             if (varFixture[i]>0) {
                 auto mappedNodeAndPhase = satVarToNodeAndPhaseMapper[varFixture[i]];
-                if ((nodeTypes[mappedNodeAndPhase.first]==RELU)) {
+                if (nodeTypes[mappedNodeAndPhase.first]==RELU) {
                     if ((lastPositiveRELULiteral!=varFixture[i]) && (lastPositiveRELULiteral+1!=varFixture[i]))
                         fixedOptimizationFunctionNetworkSolving[reluslackVars.at(mappedNodeAndPhase.first).first+1] = varFixture.size()-i+1;
                 } else if (nodeTypes[mappedNodeAndPhase.first]==MAXPOOL) {
