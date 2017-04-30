@@ -13,7 +13,7 @@ License
 
 Planet itself is available under GPLv3 license, as it uses the GNU Linear Programming toolkit, which is also under GPLv2.
 
-This repository contains some modified network definition files from the Caffe neural network learning framework, which is licensed under the BSD 2-Clause license. The modifications are available under the same license.
+This repository contains some modified network definition files from the [Caffe](http://caffe.berkeleyvision.org) neural network learning framework, which is licensed under the BSD 2-Clause license. The modifications are available under the same license.
 
 The Planet tool uses a modified version of Minisat v.2.2.0, which itself is available under the MIT license. If you are interested in Minisat, visit http://minisat.se/MiniSat.html and get the solver from there. This repository only contains the Minisat parts that were actually used in Planet.
 
