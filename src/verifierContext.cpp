@@ -287,7 +287,11 @@ bool VerificationProblem::computeInitialNeuronLimitBounds() {
     // Print (debugging)
     std::cerr << "Node limits:\n";
     for (unsigned int i=0;i<nodeTypes.size();i++) {
-        std::cerr << "- " << nodeNames[i] << ", min: " << initialNeuronLimitBounds[i].first << ", max: " << initialNeuronLimitBounds[i].second << std::endl;
+        if (nodeTypes[i]==LINEAR)
+            std::cerr << "+ ";
+        else
+            std::cerr << "- ";
+        std::cerr << nodeNames[i] << ", min: " << initialNeuronLimitBounds[i].first << ", max: " << initialNeuronLimitBounds[i].second << std::endl;
     }
 
     // ====================================================================================
@@ -313,7 +317,12 @@ bool VerificationProblem::computeInitialNeuronLimitBounds() {
                 }
                 nodeNofPhases[i] = localIn.size();
                 nodeConnectionIn[i] = localIn;
-                assert(nodeConnectionIn[i].size()>0);
+                if (nodeConnectionIn[i].size()==0) {
+                    // Can happen in UNSAT instances if none of the incoming
+                    // nodes supply as much flows as needed before.
+                    std::cerr << "\n";
+                    return false;
+                }
             }
         }
 
@@ -357,13 +366,30 @@ bool VerificationProblem::computeInitialNeuronLimitBounds() {
                         throw "Internal error (336)";
                     }
                     lowerBound = lp.getObjective();
-                    if (nodeTypes[i]==RELU) lowerBound = std::max(0.0,lowerBound);
 
+                    // ReLU processing.
+                    if (nodeTypes[i]==RELU) {
+                        lowerBound = std::max(0.0,lowerBound);
+                        if (lowerBound>EPSILON_FOR_CALLING_AN_APPROXIMATED_NODE_VALUE_TO_BE_PRECISE_RELATIVE_TO_BOUNDS) {
+                            nodeTypes[i] = LINEAR;
+                            nodeNofPhases[i] = 0;
+                            std::cerr << "Making " << nodeNames[i] << " linear.\n";
+                            addReLUFixture(lp, i, 2, nodeTypes.size());
+                        }
+                    }
 
                     // Upper bound
                     lp.setMaxim();
                     lp.setObjFn(row);
+
+                    // ReLU special case: We can assume the second phase here.
+                    if (nodeTypes[i]==RELU) {
+                        addReLUFixture(lp, i, 2, nodeTypes.size());
+                    }
+
                     lpRes = lp.solve();
+                    double upperBound = lp.getObjective();
+
                     //lp.writeLP("/tmp/jo.txt");
                     if (lpRes==LPUNBOUNDED) {
                         std::ostringstream err;
@@ -372,12 +398,32 @@ bool VerificationProblem::computeInitialNeuronLimitBounds() {
                         assert(LPUNBOUNDED==lp.solve());
                         throw err.str();
                     } else if (lpRes==LPINFEASIBLE) {
-                        std::cerr << "\n";
-                        return false;
+                        if (nodeTypes[i]!=RELU) {
+                            std::cerr << "\n";
+                            return false;
+                        } else {
+                            // Fix the relu to a constant node
+                            lp.deleteLastRow();
+
+                            // In an unsatisfiable instance, it may
+                            // happen that previously, the lower bound was
+                            // >0. But then it's because it's unsat
+                            if (initialNeuronLimitBounds[i].first>EPSILON_FOR_CALLING_AN_APPROXIMATED_NODE_VALUE_TO_BE_PRECISE_RELATIVE_TO_BOUNDS) return false;
+
+                            upperBound = 0.0;
+                            // Do not make this a linear node as we are losing information then...
+                            addReLUFixture(lp, i, 1, nodeTypes.size());
+                        }
                     } else if (lpRes!=LPOPTIMUM) {
                         throw "Internal error (351)";
                     }
-                    double upperBound = lp.getObjective();
+
+                    // ReLU special case: Remove the added constraint
+                    if (nodeTypes[i]==RELU) {
+                        lp.deleteLastRow();
+                        upperBound = std::max(upperBound,0.0);
+                    }
+
                     aggregatedChange += std::fabs(lowerBound - initialNeuronLimitBounds[i].first);
                     aggregatedChange += std::fabs(upperBound - initialNeuronLimitBounds[i].second);
 
@@ -405,7 +451,11 @@ bool VerificationProblem::computeInitialNeuronLimitBounds() {
         // Print (debugging)
         std::cerr << "Node limits:\n";
         for (unsigned int i=0;i<nodeTypes.size();i++) {
-            std::cerr << "- " << nodeNames[i] << ", min: " << initialNeuronLimitBounds[i].first << ", max: " << initialNeuronLimitBounds[i].second << std::endl;
+            if (nodeTypes[i]==LINEAR)
+                std::cerr << "+ ";
+            else
+                std::cerr << "- ";
+            std::cerr << nodeNames[i] << ", min: " << initialNeuronLimitBounds[i].first << ", max: " << initialNeuronLimitBounds[i].second << std::endl;
         }
 
     }
@@ -513,12 +563,18 @@ void VerificationProblem::addMaxPoolFixture(LPProblem &lp, unsigned int nodeNumb
     }
 #ifndef NDEBUG
     if (maxMin==-1*std::numeric_limits<double>::max()) {
+        std::cerr << "Node: " << nodeNames[nodeNumber] << std::endl;
         std::cerr << "Number of phases: " << nodeNofPhases[nodeNumber] << "\n";
-        std::cerr << "Literals:";
+        std::cerr << "Incoming edges:";
+        for (auto it : nodeConnectionIn[nodeNumber]) {
+            std::cerr << " " << nodeNames[it.first];
+        }
+        std::cerr << "\nLiterals:";
         for (auto it : knownPhaseComponents) std::cerr << " " << it;
         std::cerr << std::endl;
         std::cerr << "nodeConnectionIn.Size: " << nodeConnectionIn[nodeNumber].size() << std::endl;
     }
+
     assert(maxMin!=-1*std::numeric_limits<double>::max());
 #endif
 
@@ -785,6 +841,7 @@ void VerificationProblem::verify() {
     satVarToNodeAndPhaseMapper.push_back(std::pair<int,int>(-1,-1));
 
     unsigned int nextFreeVar = 1;
+    nofNodesWithPhases = 0;
     for (unsigned int i=0;i<nodeTypes.size();i++) {
         std::cerr << "c Starting var phases of " << nodeNames[i] << ": " << nextFreeVar << std::endl;
         startingSATVarsPhases.push_back(nextFreeVar);
@@ -793,6 +850,7 @@ void VerificationProblem::verify() {
             satVarToNodeAndPhaseMapper.push_back(std::pair<int,int>(i,j));
         }
         nextFreeVar += nodeNofPhases[i];
+        if (nodeNofPhases[i]>0) nofNodesWithPhases++;
     }
     for (unsigned int i=0;i<nextFreeVar-1;i++) minisat.newVar();
     nofSATVars = nextFreeVar-1;
@@ -822,6 +880,19 @@ void VerificationProblem::verify() {
             }
         }
     }
+
+    // For ReLU nodes that have a maximum value of 0, we already know that the phase should be 0
+    for (unsigned int j=0;j<nodeNames.size();j++) {
+        if (nodeTypes[j]==RELU) {
+            if (initialNeuronLimitBounds[j].second<=0.0) {
+                std::vector<int> clause;
+                clause.push_back(startingSATVarsPhases[j]);
+                std::cerr << "CLAUSE RELUPHASE1: " << startingSATVarsPhases[j] << std::endl;
+                minisat.addClause(clause);
+            }
+        }
+    }
+
 
     CALLGRIND_START_INSTRUMENTATION;
 
@@ -1183,7 +1254,7 @@ bool VerificationProblem::checkPartialNodeFixtureInLPRelaxation(std::vector<int>
                     // Add anyway -- we may make use of this one!
                     newVarFixture.push_back(varFixture[i]);
                 } else {
-                    throw "Unsupported";
+                    throw "Unsupported (1209)";
                 }
             } else {
                 newVarFixture.push_back(varFixture[i]);

@@ -19,8 +19,9 @@ void SupersetDatabase::addSet(std::vector<int> const &elements) {
     // Search for a match
     int *backPtrSetInDB = currentPtr+currentSize;
     int *backPtrInTrace = trace+nofElementsInTrace-1;
-    while ((backPtrInTrace>cpy) && (backPtrSetInDB>currentPtr)) {
-        int diff = (*backPtrSetInDB) - *backPtrInTrace;
+    while ((backPtrInTrace>trace) && (backPtrSetInDB>currentPtr)) {
+        int diff = (*backPtrSetInDB);
+        diff -= *backPtrInTrace;
         if (diff==0) {
             backPtrSetInDB--;
             backPtrInTrace--;

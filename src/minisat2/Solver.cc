@@ -838,6 +838,21 @@ lbool Solver::search(int nof_conflicts)
         }
         std::cerr << std::endl;*/
 
+#ifndef NDEBUG
+        // Check if every clause is not already violatedd.
+        for (int i = 0; i < clauses.size(); i++) {
+            bool projektX = false;
+
+            auto &c = ca[clauses[i]];
+            for (int i = 0; i < c.size(); i++)
+                if (value(c[i]) != l_False) {
+                    projektX = true;
+                }
+            assert(projektX);
+        }
+#endif
+
+
         CRef confl = propagate();
         if (confl != CRef_Undef){
 
@@ -877,6 +892,16 @@ lbool Solver::search(int nof_conflicts)
 
         } else {
 
+#ifndef NDEBUG
+            std::cerr << "Level-0 literals:";
+            for (int j=0;j<((trail_lim.size() == 0)?trail.size():trail_lim[0]);j++) {
+                std::cerr << " " << (sign(trail[j])?-1*var(trail[j])-1:var(trail[j])+1);
+                std::cerr << "(" << (decision[var(trail[j])]?"1":"0") << ")";
+            }
+            std::cerr << std::endl;
+#endif
+
+
             // No conflict. Check the current partial assignment if it is OK for the special constraints
             bool abortPropagation = false;
 
@@ -898,6 +923,7 @@ lbool Solver::search(int nof_conflicts)
 
                 if (clause.size()==1) {
                     // Single-Literal clause: enqueue directly.
+                    std::cerr << "Calling CancelUntil 0: 926\n";
                     if (decisionLevel()>0) {
                         cancelUntil(0);
                         verificationProblem->backtrack();
@@ -974,7 +1000,31 @@ lbool Solver::search(int nof_conflicts)
                             lowestConflictLevel = std::max(level(std::abs(lit)-1)-1,lowestConflictLevel);
                         }
 
+                        std::cerr << "Calling CancelUntil: 1003\n";
+
+                        std::cerr << "Literals:";
+                        bool found86 = false;
+                        for (int j=0;j<trail.size();j++) {
+                            std::cerr << " " << (sign(trail[j])?-1*var(trail[j])-1:var(trail[j])+1);
+                            if (var(trail[j])==86) found86 = true;
+
+                        }
+                        std::cerr << std::endl;
+
                         cancelUntil(std::max(0,lowestConflictLevel-1));
+
+                        std::cerr << "Literals:";
+                        bool found86B = false;
+                        for (int j=0;j<trail.size();j++) {
+                            std::cerr << " " << (sign(trail[j])?-1*var(trail[j])-1:var(trail[j])+1);
+                            if (var(trail[j])==86) found86B = true;
+                        }
+                        std::cerr << std::endl;
+                        if (!found86B && found86) {
+                            toDimacs("/tmp/postBacktrack.cnf");
+                        }
+
+
                         verificationProblem->backtrack();
 
                         vec<Lit> novo_clause;
@@ -1002,6 +1052,7 @@ lbool Solver::search(int nof_conflicts)
                             // Need to cancel until level 0, as one-literal clauses need
                             // to be pushed directly to the decision stack, and
                             // at a later "cancel", we would forget this one.
+                            std::cerr << "Calling CancelUntil 0: 1032\n";
                             cancelUntil(0);
                             verificationProblem->backtrack();
                             uncheckedEnqueue(novo_clause[0]);
@@ -1071,12 +1122,13 @@ lbool Solver::search(int nof_conflicts)
             }
 
             if (nextTask==1) {
+                toDimacs("/tmp/finalDimacs.cnf");
                 int nofLevel0VarsInCurrentAssignment = (decisionLevel()>0)?trail_lim[0]:currentAssignment.size();
                 if (verificationProblem->checkPartialNodeFixtureInLPRelaxation(currentAssignment,nofLevel0VarsInCurrentAssignment,clausesToAdd))
                     nextTask = 2;
                 else
                     nextTask = 0;
-                //std::cerr << "Nof Clauses to add after CheckLPRelaxation: " << clausesToAdd.size() << std::endl;
+                std::cerr << "Nof Clauses to add after CheckLPRelaxation: " << clausesToAdd.size() << std::endl;
                 continue;
             }
 
@@ -1087,6 +1139,7 @@ lbool Solver::search(int nof_conflicts)
             if ((nof_conflicts >= 0 && conflictC >= nof_conflicts) || !withinBudget()){
                 // Reached bound on number of conflicts:
                 progress_estimate = progressEstimate();
+                std::cerr << "Calling CancelUntil 0: 1119\n";
                 cancelUntil(0);
                 verificationProblem->backtrack();
                 return l_Undef; }
@@ -1119,6 +1172,7 @@ lbool Solver::search(int nof_conflicts)
                 // New variable decision:
                 decisions++;
                 next = pickBranchLit();
+                std::cerr << "Branching variable(starting with 1): " << var(next)+1 << std::endl;
 
                 if (next == lit_Undef)
                     // Model found:
@@ -1131,10 +1185,14 @@ lbool Solver::search(int nof_conflicts)
             uncheckedEnqueue(next);
             lbool checker = searchOnwards();
             if (checker==l_False) {
-                //std::cerr << "Cancel Small\n";
+                std::cerr << "Cancel Small\n";
+
+                // If "searchOnwards" returns false on decision level 0, then there there is no solution at all.
+                if (dec==0) return l_False;
+
                 cancelUntil(dec);
             } else {
-                //std::cerr << "Cancel Wide\n";
+                std::cerr << "Cancel Wide\n";
                 cancelUntil(dec+1);
                 //uncheckedEnqueue(next);
             }
@@ -1281,10 +1339,14 @@ static Var mapVar(Var x, vec<Var>& map, Var& max)
 void Solver::toDimacs(FILE* f, Clause& c, vec<Var>& map, Var& max)
 {
     if (satisfied(c)) return;
+    bool projektX = false;
 
     for (int i = 0; i < c.size(); i++)
-        if (value(c[i]) != l_False)
+        if (value(c[i]) != l_False) {
             fprintf(f, "%s%d ", sign(c[i]) ? "-" : "", mapVar(var(c[i]), map, max)+1);
+            projektX = true;
+        }
+    assert(projektX);
     fprintf(f, "0\n");
 }
 
