@@ -838,21 +838,6 @@ lbool Solver::search(int nof_conflicts)
         }
         std::cerr << std::endl;*/
 
-#ifndef NDEBUG
-        // Check if every clause is not already violatedd.
-        for (int i = 0; i < clauses.size(); i++) {
-            bool projektX = false;
-
-            auto &c = ca[clauses[i]];
-            for (int i = 0; i < c.size(); i++)
-                if (value(c[i]) != l_False) {
-                    projektX = true;
-                }
-            assert(projektX);
-        }
-#endif
-
-
         CRef confl = propagate();
         if (confl != CRef_Undef){
 
@@ -1339,14 +1324,11 @@ static Var mapVar(Var x, vec<Var>& map, Var& max)
 void Solver::toDimacs(FILE* f, Clause& c, vec<Var>& map, Var& max)
 {
     if (satisfied(c)) return;
-    bool projektX = false;
 
     for (int i = 0; i < c.size(); i++)
         if (value(c[i]) != l_False) {
             fprintf(f, "%s%d ", sign(c[i]) ? "-" : "", mapVar(var(c[i]), map, max)+1);
-            projektX = true;
         }
-    assert(projektX);
     fprintf(f, "0\n");
 }
 
