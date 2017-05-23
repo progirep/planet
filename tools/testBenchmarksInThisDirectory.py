@@ -25,6 +25,8 @@ while location[-1]!="/" and len(location)>0:
 # Iterate over the benchmarks
 for benchmark in allRLVFiles:
     assert benchmark.endswith(".rlv")
+    sys.stdout.write(benchmark)
+    sys.stdout.flush()
     benchmarkMainPart = benchmark[0:len(benchmark)-4]
     
     # Run RLV
@@ -66,6 +68,6 @@ for benchmark in allRLVFiles:
     else:
         print "Note: No expected result for "+benchmark+" found."
     
-    print benchmark+" -> OK."
+    print " -> OK."
     if totalErrorLine!=None:
         print totalErrorLine

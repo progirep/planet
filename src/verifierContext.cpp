@@ -319,7 +319,7 @@ bool VerificationProblem::computeInitialNeuronLimitBounds() {
                 nodeConnectionIn[i] = localIn;
                 if (nodeConnectionIn[i].size()==0) {
                     // Can happen in UNSAT instances if none of the incoming
-                    // nodes supply as much flows as needed before.
+                    // nodes supply as much flows as needed.
                     std::cerr << "\n";
                     return false;
                 }

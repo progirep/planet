@@ -721,7 +721,7 @@ bool Solver::simplify()
 |    all variables are decision variables, this means that the clause set is satisfiable. 'l_False'
 |    if the clause set is unsatisfiable. 'l_Undef' if the bound on number of conflicts is reached.
 |________________________________________________________________________________________________@*/
-lbool Solver::searchOnwards()
+lbool Solver::searchOnwards(int startingDecisionLevel)
 {
     assert(ok);
     int         backtrack_level;
@@ -734,7 +734,6 @@ lbool Solver::searchOnwards()
         if (confl != CRef_Undef){
             // CONFLICT
             conflicts++; conflictC++;
-            if (decisionLevel() == 0) return l_False;
 
             learnt_clause.clear();
             analyze(confl, learnt_clause, backtrack_level);
@@ -748,6 +747,10 @@ lbool Solver::searchOnwards()
                 attachClause(cr);
                 claBumpActivity(ca[cr]);
                 uncheckedEnqueue(learnt_clause[0], cr);
+            }
+
+            if (backtrack_level <= startingDecisionLevel) {
+                return l_False;
             }
 
             varDecayActivity();
@@ -789,9 +792,11 @@ lbool Solver::searchOnwards()
                 decisions++;
                 next = pickBranchLit();
 
-                if (next == lit_Undef)
+                if (next == lit_Undef) {
+                    cancelUntil(startingDecisionLevel);
                     // Model found:
                     return l_True;
+                }
             }
 
             // Increase decision level and enqueue 'next'
@@ -1168,18 +1173,20 @@ lbool Solver::search(int nof_conflicts)
             int dec = decisionLevel();
             newDecisionLevel();
             uncheckedEnqueue(next);
-            lbool checker = searchOnwards();
+            lbool checker = searchOnwards(decisionLevel());
             if (checker==l_False) {
                 std::cerr << "Cancel Small\n";
 
                 // If "searchOnwards" returns false on decision level 0, then there there is no solution at all.
-                if (dec==0) return l_False;
+                //if (dec==0) return l_False;
 
-                cancelUntil(dec);
+                verificationProblem->backtrack();
             } else {
+                cancelUntil(dec);
                 std::cerr << "Cancel Wide\n";
-                cancelUntil(dec+1);
                 //uncheckedEnqueue(next);
+                newDecisionLevel();
+                uncheckedEnqueue(next);
             }
         }
     }
