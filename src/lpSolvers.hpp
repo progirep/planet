@@ -235,6 +235,12 @@ public:
         //glp_cpx_basis(lp);
         int lpRes = glp_simplex(lp, NULL);
 
+        // If it failed, try again immediately.
+        if (lpRes==GLP_EFAIL) {
+            std::cerr << "GLP Failed. Trying again once.\n";
+            lpRes = glp_simplex(lp, NULL);
+        }
+
         // If the solution failed with a EBADB error, then an added constraint made the initial basis incorrect. Then we have to recompute it and try again.
         if (lpRes==GLP_EBADB) {
             //glp_adv_basis(lp, 0);
@@ -243,10 +249,10 @@ public:
         }
 
         switch (lpRes) {
+        case GLP_EFAIL:
         case GLP_EBADB:
         case GLP_ESING:
         case GLP_ECOND:
-        case GLP_EFAIL:
         case GLP_EOBJLL:
         case GLP_EOBJUL:
         case GLP_EITLIM:
@@ -256,6 +262,14 @@ public:
         {
                 std::ostringstream err;
                 err << "GLP returned error " << lpRes;
+                if (lpRes==GLP_EFAIL) err << " (GLP_EFAIL)";
+                else if (lpRes==GLP_EBADB) err << " (GLP_EFAIL)";
+                else if (lpRes==GLP_ESING) err << " (GLP_ESING)";
+                else if (lpRes==GLP_ECOND) err << " (GLP_ECOND)";
+                else if (lpRes==GLP_EOBJLL) err << " (GLP_EOBJLL)";
+                else if (lpRes==GLP_EOBJUL) err << " (GLP_EOBJUL)";
+                else if (lpRes==GLP_EITLIM) err << " (GLP_EITLIM)";
+                else if (lpRes==GLP_ENOPFS) err << " (GLP_ENOPFS)";
                 writeLP("/tmp/glp_error.lp");
                 throw err.str();
         }

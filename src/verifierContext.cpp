@@ -919,7 +919,7 @@ void VerificationProblem::verify() {
 bool VerificationProblem::checkPartialNodeFixtureInSimplePropagation(std::vector<int> currentAssignment, std::list<std::vector<int> > &clausesToAdd) {
     std::vector<std::pair<double,double> > refinedNeuronLimitBounds(nodeTypes.size());
     std::vector<std::pair<double,double> > howMuchInflowIsAdmissible(nodeTypes.size());
-    std::vector<std::vector<int> > reasons(nodeTypes.size()); // NEGATED Literals connected to this one.
+    std::vector<std::set<int> > reasons(nodeTypes.size()); // NEGATED Literals connected to this one.
     std::set<int> currentAssignmentAsSet(currentAssignment.begin(),currentAssignment.end());
 
     //return true;
@@ -942,7 +942,7 @@ bool VerificationProblem::checkPartialNodeFixtureInSimplePropagation(std::vector
                     min += pair.second*refinedNeuronLimitBounds[pair.first].first;
                     max += pair.second*refinedNeuronLimitBounds[pair.first].second;
                 }
-                reasons[i].insert(reasons[i].end(),reasons[pair.first].begin(),reasons[pair.first].end());
+                reasons[i].insert(reasons[pair.first].begin(),reasons[pair.first].end());
             }
             min += nodeBias[i];
             max += nodeBias[i];
@@ -963,7 +963,7 @@ bool VerificationProblem::checkPartialNodeFixtureInSimplePropagation(std::vector
                     min += pair.second*refinedNeuronLimitBounds[pair.first].first;
                     max += pair.second*refinedNeuronLimitBounds[pair.first].second;
                 }
-                reasons[i].insert(reasons[i].end(),reasons[pair.first].begin(),reasons[pair.first].end());
+                reasons[i].insert(reasons[pair.first].begin(),reasons[pair.first].end());
             }
             min += nodeBias[i];
             max += nodeBias[i];
@@ -1021,7 +1021,7 @@ bool VerificationProblem::checkPartialNodeFixtureInSimplePropagation(std::vector
                 // Can it be that this phase is already fixed to be 0? Then fix it as well
                 if (currentAssignmentAsSet.count(startingSATVarsPhases[i]+0)>0) {
                     max = 0.0;
-                    reasons[i].push_back(-1*startingSATVarsPhases[i]+0);
+                    reasons[i].insert(-1*startingSATVarsPhases[i]+0);
                 }
             }
 
@@ -1057,7 +1057,7 @@ bool VerificationProblem::checkPartialNodeFixtureInSimplePropagation(std::vector
 
             // Compute reasons
             for (auto pair : nodeConnectionIn[i]) {
-                reasons[i].insert(reasons[i].end(),reasons[pair.first].begin(),reasons[pair.first].end());
+                reasons[i].insert(reasons[pair.first].begin(),reasons[pair.first].end());
             }
 
             // Now which phases can already be deactivated?

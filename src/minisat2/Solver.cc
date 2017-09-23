@@ -990,30 +990,7 @@ lbool Solver::search(int nof_conflicts)
                             lowestConflictLevel = std::max(level(std::abs(lit)-1)-1,lowestConflictLevel);
                         }
 
-                        std::cerr << "Calling CancelUntil: 1003\n";
-
-                        std::cerr << "Literals:";
-                        bool found86 = false;
-                        for (int j=0;j<trail.size();j++) {
-                            std::cerr << " " << (sign(trail[j])?-1*var(trail[j])-1:var(trail[j])+1);
-                            if (var(trail[j])==86) found86 = true;
-
-                        }
-                        std::cerr << std::endl;
-
                         cancelUntil(std::max(0,lowestConflictLevel-1));
-
-                        std::cerr << "Literals:";
-                        bool found86B = false;
-                        for (int j=0;j<trail.size();j++) {
-                            std::cerr << " " << (sign(trail[j])?-1*var(trail[j])-1:var(trail[j])+1);
-                            if (var(trail[j])==86) found86B = true;
-                        }
-                        std::cerr << std::endl;
-                        if (!found86B && found86) {
-                            toDimacs("/tmp/postBacktrack.cnf");
-                        }
-
 
                         verificationProblem->backtrack();
 
@@ -1118,7 +1095,7 @@ lbool Solver::search(int nof_conflicts)
                     nextTask = 2;
                 else
                     nextTask = 0;
-                std::cerr << "Nof Clauses to add after CheckLPRelaxation: " << clausesToAdd.size() << std::endl;
+                //std::cerr << "Nof Clauses to add after CheckLPRelaxation: " << clausesToAdd.size() << std::endl;
                 continue;
             }
 
@@ -1162,7 +1139,7 @@ lbool Solver::search(int nof_conflicts)
                 // New variable decision:
                 decisions++;
                 next = pickBranchLit();
-                std::cerr << "Branching variable(starting with 1): " << var(next)+1 << std::endl;
+                //std::cerr << "Branching variable(starting with 1): " << var(next)+1 << std::endl;
 
                 if (next == lit_Undef)
                     // Model found:
@@ -1175,7 +1152,7 @@ lbool Solver::search(int nof_conflicts)
             uncheckedEnqueue(next);
             lbool checker = searchOnwards(decisionLevel());
             if (checker==l_False) {
-                std::cerr << "Cancel Small\n";
+                //std::cerr << "Cancel Small\n";
 
                 // If "searchOnwards" returns false on decision level 0, then there there is no solution at all.
                 //if (dec==0) return l_False;
@@ -1183,7 +1160,7 @@ lbool Solver::search(int nof_conflicts)
                 verificationProblem->backtrack();
             } else {
                 cancelUntil(dec);
-                std::cerr << "Cancel Wide\n";
+                //std::cerr << "Cancel Wide\n";
                 //uncheckedEnqueue(next);
                 newDecisionLevel();
                 uncheckedEnqueue(next);
