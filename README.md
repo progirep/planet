@@ -33,6 +33,10 @@ Before we can use the tool, some preparation has to be done:
     - libglpk-dev
     - qt5-qmake
     - valgrind
+    
+The tool can then be compiled by running:
+
+    cd src; qmake Tool.pro; makes
 
 Some scripts in this repository need the root path of the Caffe neural network learning framework, or the root path of the Yices SMT solver. The following environment variables should point to these:
 
