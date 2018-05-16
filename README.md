@@ -33,6 +33,7 @@ Before we can use the tool, some preparation has to be done:
     - libglpk-dev
     - qt5-qmake
     - valgrind
+    - libltdl-dev
     
 The tool can then be compiled by running:
 
