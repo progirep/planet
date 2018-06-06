@@ -34,6 +34,7 @@ Before we can use the tool, some preparation has to be done:
     - qt5-qmake
     - valgrind
     - libltdl-dev
+    - protobuf-compiler
     
 The tool can then be compiled by running:
 
