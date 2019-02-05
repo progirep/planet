@@ -432,7 +432,7 @@ bool VerificationProblem::computeInitialNeuronLimitBounds() {
                         if ((upperBound==0.0) || (lowerBound==0.0))
                             initialNeuronLimitBounds[i] = std::pair<double,double>(0.0,0.0);
                         else
-                            initialNeuronLimitBounds[i] = std::pair<double,double>((upperBound-lowerBound)/2.0,(upperBound-lowerBound)/2.0);
+                            initialNeuronLimitBounds[i] = std::pair<double,double>((upperBound+lowerBound)/2.0,(upperBound+lowerBound)/2.0);
                     } else {
                         initialNeuronLimitBounds[i] = std::pair<double,double>(lowerBound,upperBound);
                     }
